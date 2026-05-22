@@ -19,7 +19,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: /API/Dockerfile
+      dockerfile: ./API/Dockerfile
     container_name: helix-api
     image: helix:api
     restart: always
