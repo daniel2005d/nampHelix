@@ -1,0 +1,17 @@
+##########################
+#  Archivo para usar en portainer 
+# 1. Crear las imagenes. Comprimiendo frontnd y subiendolo
+# 2. Crear api, comprimiendo toda la carpeta externa y eliminando los archivos y/o carpetas que no se necesitan.
+##########################
+
+version: '3.8'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./API/Dockerfile
+    container_name: helix-api
+    image: helix:api
+    restart: always
+    ports:
+      - "9090:5000"
