@@ -12,7 +12,7 @@ RUN pip install -r requirements.txt
 
 # Instalar dependencias
 
-COPY ./API /app/api
+COPY ./API /app/API
 
 # Ejecutar la aplicación
 CMD ["uvicorn", "API.api:app", "--host", "0.0.0.0", "--port", "5000"]
