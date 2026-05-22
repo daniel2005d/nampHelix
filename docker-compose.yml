@@ -16,4 +16,4 @@ services:
     ports:
       - "9090:5000"
     environment:
-      CONNECTION_STRING=${CONNECTION_STRING}
+      - CONNECTION_STRING=${CONNECTION_STRING}
