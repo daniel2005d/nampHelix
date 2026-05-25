@@ -112,7 +112,8 @@ class NexusMapperDB:
                 svc = port_el.find('service')
                 svc_name = svc.get('name') if svc is not None else None
                 product = svc.get('product') if svc is not None else None
-                
+                if product:
+                    product += " " + svc.get('version') if svc is not None else None
                 # Upsert de Port
                 port = session.query(Port).filter_by(host_id=host.id, port_number=pid).first()
                 if not port:
