@@ -97,7 +97,10 @@
                         <span ng-if="!isLocalMode"
                             class="px-1 py-0.5 text-[7px] font-bold bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 rounded uppercase">API</span>
                     </div>
-                    <p class="text-[9px] text-slate-400 font-mono">Visualizador Topológico Avanzado</p>
+                    <p class="text-[9px] text-slate-400 font-mono">
+                        {{currentProject}}
+
+                    </p>
                 </div>
             </div>
 
@@ -125,9 +128,17 @@
     </main>
 
     <footer class="border-t border-slate-800 mt-auto py-3 px-6 text-center text-[10px] text-slate-500 bg-slate-950">
-        <p>NMAPHelix • 1.0</p>
+        <p>NMAPHelix • 1.1</p>
     </footer>
 
+
+    
+
+    <!-- Overlay de Carga -->
+<div ng-show="isLoading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+    <div class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+    <p class="mt-4 text-cyan-400 font-semibold tracking-widest animate-pulse">PROCESANDO...</p>
+</div>
 
       <script>
     window.config = {};

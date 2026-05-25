@@ -41,18 +41,28 @@ async def get_detail_services(project_id:int):
 
 
 @router.post('/upload/{project_id}')
-async def upload(project_id:int, file: UploadFile= File(...)):
-    if not file.filename.endswith('.xml'):
-        raise HTTPException(status_code=400, detail="El archivo debe ser un XML")
+async def upload(project_id:int, files: List[UploadFile]= File(...)):
+    results = []
     
-    try:
-        xml_data = await file.read()
-        db.process_nmap_xml(int(project_id), xml_data.decode('utf-8'))
-        return {"message": "Archivo procesado con éxito", "project_id": project_id}
+    for file in files:
+        if not file.filename.endswith('.xml'):
+            raise HTTPException(status_code=400, detail=f"El archivo {file.filename} debe ser un XML")
+        
+        try:
+            xml_data = await file.read()
+            # Procesamos cada archivo
+            db.process_nmap_xml(int(project_id), xml_data.decode('utf-8'))
+            results.append(file.filename)
+            
+        except Exception as e:
+            print(f"Error procesando {file.filename}: {e}")
+            raise HTTPException(status_code=500, detail=f"Error al procesar {file.filename}: {str(e)}")
 
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "message": "Archivos procesados con éxito", 
+        "project_id": project_id, 
+        "processed_files": results
+    }
 
 @router.post('/update')
 async def update_port(model: UpdateRequest):

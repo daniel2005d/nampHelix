@@ -141,12 +141,22 @@ class NexusMapperDB:
         session.close()
         return data
     
+    ### Proyectos ####
+
+    def get_poject_information(self, id):
+        session = self.Session()
+        project = session.query(Project).filter(Project.id == id).first()
+        data = {"name":project.name, "description": project.description , "id": project.id }
+        return data
+    
     def get_projects(self):
         session = self.Session()
         results = session.query(Project)
         data = [{"name": p.name, "id":p.id} for p in results]
         session.close()
         return data
+
+    ### Fin de Proyectos ####
     
     def get_services(self, project_id:int):
         session = self.Session()

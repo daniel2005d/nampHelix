@@ -1,10 +1,24 @@
 var app = angular.module('nmapHelix', ['ngRoute']);
 
-// app.run(function ($rootScope, apiBaseUrl) {
-//     apiBaseUrl = "http://127.0.0.1:5000"
-//     $rootScope.apiBaseUrl = apiBaseUrl;
-
-//   });
+// 1. Interceptor para el loading automático
+app.config(['$httpProvider', function($httpProvider) {
+    $httpProvider.interceptors.push(['$rootScope', '$q', function($rootScope, $q) {
+        return {
+            request: function(config) {
+                $rootScope.isLoading = true;
+                return config;
+            },
+            response: function(response) {
+                $rootScope.isLoading = false;
+                return response;
+            },
+            responseError: function(rejection) {
+                $rootScope.isLoading = false;
+                return $q.reject(rejection);
+            }
+        };
+    }]);
+}])
 
 app.config(['$routeProvider', function ($routeProvider) {
     $routeProvider
@@ -95,6 +109,13 @@ app.controller('IndexController', ['$scope', 'ApiService', 'ProjectService', fun
     $scope.changeProject = function () {
         ProjectService.clearProject();
     }
+
+    const project_id = ProjectService.getProject();
+    ApiService.get(`projects/${project_id}`).then(function(response){
+                $scope.currentProject = response.data.name ;
+    });
+
+    
 }]);
 
 app.controller('HomeController', ['$scope', 'ProjectService', 'ApiService', '$location', function ($scope, ProjectService, ApiService, $location) {
@@ -231,10 +252,11 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
 
         $scope.uploadFile = function (file) {
             if (!file) return;
-
-            // Asumimos que tienes el ID del proyecto disponible en el scope
             var formData = new FormData();
-            formData.append('file', file);
+            let files = document.getElementById('fileInput').files;
+            for (let i = 0; i < files.length; i++) {
+               formData.append('files', files[i]); 
+            }
 
             // Usamos $http para enviar el archivo
             ApiService.upload(`services/upload/${project_id}`, formData, {
