@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import List
 from API.db.data import NexusMapperDB
 from API.models.servicesModel import ServiceResponse, SummaryResponse, ProductSummaryResponse
-from API.models.requestsModel import UpdateRequest
+from API.models.requestsModel import UpdateRequest, CommandRequest
 
 router = APIRouter(prefix="/services", tags=["services"])
 
@@ -14,6 +14,7 @@ HTTP_PORTS = [8080, 8081, 8082, 8000, 8180, 80]
 async def get_project_services(project_id:int):
     data = db.get_project_data(project_id)
     for item in data:
+        
         schema = ''
         if int(item["port"]) in HTTP_PORTS:
             schema='http'
@@ -26,6 +27,9 @@ async def get_project_services(project_id:int):
     
     return data
 
+@router.get('/service_total/{project_id}')
+async def get_total_services(project_id:int):
+    return db.get_find_services(project_id)
 
 @router.get('/summary/{project_id}', response_model=List[SummaryResponse])
 async def get_detail_services(project_id:int):
@@ -38,6 +42,15 @@ async def get_detail_services(project_id:int):
     products = db.get_product_summary(project_id)
     return products
 
+
+@router.post('/add_command')
+async def add_command(model: CommandRequest):
+    try:
+        db.add_command(model.id, model.command)
+        return {"status":"OK"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail=f"{e} for command {model.command} and portId: {model.id}") 
 
 
 @router.post('/upload/{project_id}')

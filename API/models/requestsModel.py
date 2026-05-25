@@ -17,3 +17,7 @@ class CredentialRequest(BaseModel):
     role:str
     ports:Optional[List[int]]
     type:str
+
+class CommandRequest(BaseModel):
+    id:int
+    command:str

@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, UniqueConstraint, func, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, UniqueConstraint, func, Boolean, Text
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_session
 from sqlalchemy.dialects.postgresql import insert
 import xml.etree.ElementTree as ET
@@ -37,6 +37,7 @@ class Port(Base):
     product_version = Column(String)
     discovered = Column(Boolean)
     notes = Column(String)
+    commands = Column(Text)
     __table_args__ = (UniqueConstraint('host_id', 'port_number', name='_host_port_uc'),)
     host = relationship("Host", back_populates="ports")
 
@@ -63,28 +64,7 @@ class NexusMapperDB:
         self.Session = scoped_session(sessionmaker(bind=self.engine))
         Base.metadata.create_all(self.engine)
 
-    def create_project(self, name, description=""):
-        session = self.Session()
-        # Normalizar el nombre a minúsculas para la búsqueda
-        name_lower = name.lower()
-        # Intentar buscar un proyecto existente con ese nombre (case-insensitive)
-        existing_project = session.query(Project).filter(
-            Project.name.ilike(name_lower)
-        ).first()
-        
-        if existing_project:
-            pid = existing_project.id
-            session.close()
-            return pid
-            
-        # Si no existe, crear uno nuevo
-        new_project = Project(name=name, description=description)
-        session.add(new_project)
-        session.commit()
-        pid = new_project.id
-        session.close()
-        return pid
-
+    
     def process_nmap_xml(self, project_id, xml_content):
         session = self.Session()
         root = ET.fromstring(xml_content)
@@ -127,22 +107,28 @@ class NexusMapperDB:
         session.commit()
         session.close()
 
-    def get_project_data(self, project_id):
-        session = self.Session()
-        results = session.query(Host, Port).join(Port).filter(Host.id == Port.host_id, Host.project_id==project_id).all()
-        # Transformar a formato diccionario compatible con el frontend
-        data = [{
-            "ip": h.ip_address, 
-            "port": p.port_number,
-            "service_name": p.service_name, 
-            "protocol":p.protocol,
-            "port_id":p.id,
-            "discovered":p.discovered,
-            "product_version":p.product_version} for h, p in results]
-        session.close()
-        return data
-    
     ### Proyectos ####
+    def create_project(self, name, description=""):
+        session = self.Session()
+        # Normalizar el nombre a minúsculas para la búsqueda
+        name_lower = name.lower()
+        # Intentar buscar un proyecto existente con ese nombre (case-insensitive)
+        existing_project = session.query(Project).filter(
+            Project.name.ilike(name_lower)
+        ).first()
+        
+        if existing_project:
+            pid = existing_project.id
+            session.close()
+            return pid
+            
+        # Si no existe, crear uno nuevo
+        new_project = Project(name=name, description=description)
+        session.add(new_project)
+        session.commit()
+        pid = new_project.id
+        session.close()
+        return pid
 
     def get_poject_information(self, id):
         session = self.Session()
@@ -158,11 +144,45 @@ class NexusMapperDB:
         return data
 
     ### Fin de Proyectos ####
+
+
+    def get_project_data(self, project_id):
+        session = self.Session()
+        results = session.query(Host, Port).join(Port).filter(Host.id == Port.host_id, Host.project_id==project_id).all()
+        # Transformar a formato diccionario compatible con el frontend
+        data = [{
+            "ip": h.ip_address, 
+            "port": p.port_number,
+            "service_name": p.service_name, 
+            "protocol":p.protocol,
+            "port_id":p.id,
+            "discovered":p.discovered,
+            "commands": p.commands,
+            "product_version":p.product_version} for h, p in results]
+        
+        session.close()
+        return data
+    
+    def get_find_services(self, project_id:int):
+        session = self.Session()
+        query = session.query(Port.service_name, func.count(Port.id).label("count")). \
+            join(Host, Host.id == Port.host_id). \
+                filter(Host.project_id==project_id, 
+                       Port.service_name!='null',
+                       Port.service_name!='tcpwrapped') \
+                       .group_by(Port.service_name).order_by(func.count(Port.id).desc()).all()
+        
+                       
+        data = [row._asdict()  for row in query]
+        session.close()
+        return data
     
     def get_services(self, project_id:int):
         session = self.Session()
-        results = session.query(Port.service_name, Port.port_number, func.count(Port.port_number).label("count")).join(Host).filter(Host.id == Port.host_id, Host.project_id==project_id, 
-        Port.service_name != 'tcpwrapped') \
+        results = session.query(Port.service_name, Port.port_number, func.count(Port.port_number).label("count")). \
+            join(Host, Host.id == Port.host_id). \
+            filter(Host.project_id==project_id, 
+            Port.service_name != 'tcpwrapped') \
             .group_by(Port.service_name, Port.port_number).all()
         
         data = [{"service_name":p.service_name,"port":p.port_number, "count":p.count} for p in results]
@@ -178,7 +198,20 @@ class NexusMapperDB:
         data = [{"product_version":p.product_version, "count":p.count} for p in results]
         session.close()
         return data
-    
+
+    def add_command(self, port_id:int, command:str):
+        if command:
+            session = self.Session()
+            query = session.query(Port).filter(Port.id == port_id).first()
+            
+
+            if query.commands:
+                query.commands = f'\r{command}'
+            else:
+                query.commands = command
+            
+            session.commit()
+            session.close()
 
     def update_port(self, port_id:int, fields):
         session = self.Session()

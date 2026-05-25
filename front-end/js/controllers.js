@@ -111,9 +111,12 @@ app.controller('IndexController', ['$scope', 'ApiService', 'ProjectService', fun
     }
 
     const project_id = ProjectService.getProject();
-    ApiService.get(`projects/${project_id}`).then(function(response){
-                $scope.currentProject = response.data.name ;
-    });
+    if (project_id){
+        ApiService.get(`projects/${project_id}`).then(function(response){
+                        $scope.currentProject = response.data.name ;
+            });
+    }
+    
 
     
 }]);
@@ -150,15 +153,16 @@ app.controller('HomeController', ['$scope', 'ProjectService', 'ApiService', '$lo
 
 }]);
 
-app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'ProjectService', '$http',
-    function ($scope, ApiService, $routeParams, ProjectService, $http) {
+app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'ProjectService', '$http','$timeout',
+    function ($scope, ApiService, $routeParams, ProjectService, $http, $timeout) {
         $scope.toasts = [];
         $scope.toggleState = false;
         $scope.currentTab = 'hosts';
         const project_id = $routeParams.project_id;
         $scope.filteredTableRows = [];
         $scope.credentialsServices = [];
-        
+        //$scope.series = ['Servicio', 'Total'];
+          
         $scope.setTab = function (tabName) {
             $scope.currentTab = tabName;
 
@@ -181,8 +185,12 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
             return found ? found.icon : 'https://cdn-icons-png.flaticon.com/128/2991/2991108.png';
         };
 
+     
+
+
         $scope.init = function () {
             ApiService.get(`services/${project_id}`).then(function (response) {
+                
                 $scope.filteredTableRows = response.data;
                 $scope.credentialsServices = response.data;
             })
@@ -197,6 +205,16 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
 
             });
 
+            ApiService.get(`services/service_total/${project_id}`).then(function (response) {
+                $scope.total_services = response.data;
+                   
+      
+      
+            });
+    
+
+    
+
             ApiService.get(`hosts/${project_id}`).then(function (response) {
                 $scope.hosts = response.data;
 
@@ -208,7 +226,23 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
             });
             
         }
+        
+            /* Comandos */
 
+        $scope.openCommandModal = function(row) { $scope.selectedRow = row; $scope.commandInput = $scope.selectedRow.commands; $scope.showCommandModal = true; };  
+        $scope.closeCommandModal = function() {
+                    $scope.showCommandModal = false;
+                    $scope.selectedRow = null; // Limpiar la fila seleccionada
+                    $scope.commandInput = '';  // Limpiar el contenido del comando
+        };
+        $scope.sendCommand = function(row, commandInput){
+            ApiService.post('services/add_command', {"id":row.port_id, "command": commandInput}).then(function(response){
+                    $scope.closeCommandModal();
+
+            }).catch(function (err) {
+                $scope.showNotification("Error al guardar el comando:", err.data.detail, "error");
+            });
+        }
         /* Credenciales */
 
         $scope.openModal = function () {
@@ -244,6 +278,7 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
             
             ApiService.post('credentials/create', $scope.modalCred).then(function(response){
                 $scope.closeModal();
+                $scope.init ();
             });
         }
 
