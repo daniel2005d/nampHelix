@@ -208,6 +208,21 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
             }
 
         };
+        
+        $scope.copied = {};
+        $scope.copyCommand = function(cmd, index) {
+                navigator.clipboard.writeText(cmd).then(function() {
+                $scope.copied[index] = true;
+                
+                // Volver a falso después de 2 segundos
+                $timeout(function() {
+                    $scope.copied[index] = false;
+                }, 2000);
+                
+                // Forzar actualización de la vista si es necesario
+                $scope.$apply(); 
+                });
+          };
 
         $scope.getIconForService = function (serviceName) {
             const name = serviceName.toLowerCase();
@@ -234,6 +249,20 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
                 
                 $scope.filteredTableRows = response.data;
                 $scope.credentialsServices = response.data;
+
+                const ipGroup = response.data.reduce((acc, item) => {
+                        if (!acc[item.ip]) {
+                            acc[item.ip] = [];
+                        }
+                        acc[item.ip].push(item.port);
+                        return acc;
+                        }, {});
+                
+                $scope.nmap = Object.keys(ipGroup).map(ip => {
+                            const ports = ipGroup[ip].join(',');
+                            return `nmap -Pn -n -T5 -sV -sC ${ip} -p ${ports} -oA nmap/${ip}_filterports`;
+                });
+                
             })
 
             ApiService.get(`services/summary/${project_id}`).then(function (response) {
