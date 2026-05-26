@@ -162,9 +162,50 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
         $scope.filteredTableRows = [];
         $scope.credentialsServices = [];
         //$scope.series = ['Servicio', 'Total'];
+
+        $scope.initChart = function(){
+            Highcharts.chart('container', {
+
+                        chart: {
+                            type: 'column',
+                            
+                        },
+
+                        title: {
+                            text: 'Servicios'
+                        },
+
+                        
+
+                        xAxis: {
+                            type: 'category'
+                        },
+
+
+                        legend: {
+                            enabled: false
+                        },
+
+                        series: [{
+                            name: 'Labor Costs',
+                            data: $scope.chartSeries,
+                            
+                        
+                            borderRadius: 3,
+                            colorByPoint: true
+                        }]
+
+                    });
+
+        }
           
         $scope.setTab = function (tabName) {
             $scope.currentTab = tabName;
+
+            if (tabName === 'services-discovered'){
+               $timeout($scope.initChart, 120);
+
+            }
 
         };
 
@@ -207,13 +248,16 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
 
             ApiService.get(`services/service_total/${project_id}`).then(function (response) {
                 $scope.total_services = response.data;
-                   
-      
-      
-            });
-    
+                $scope.chartSeries = [];
 
-    
+
+                $scope.total_services.forEach((item)=>{
+                    $scope.chartSeries.push([item.service_name, item.count]);
+                })
+
+                
+            });
+
 
             ApiService.get(`hosts/${project_id}`).then(function (response) {
                 $scope.hosts = response.data;
