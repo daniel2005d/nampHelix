@@ -3,10 +3,12 @@ from typing import List
 from API.db.data import NexusMapperDB
 from API.models.servicesModel import ServiceResponse, SummaryResponse, ProductSummaryResponse
 from API.models.requestsModel import UpdateRequest, CommandRequest
+from API.discover import Discover
 
 router = APIRouter(prefix="/services", tags=["services"])
 
 db = NexusMapperDB()
+discovery = Discover()
 SSL_PORTS = [443, 8443]
 HTTP_PORTS = [8080, 8081, 8082, 8000, 8180, 80]
 
@@ -88,10 +90,24 @@ async def update_port(model: UpdateRequest):
 @router.post('/bind_title/{project_id}')
 async def update_title(project_id:int):
     http_services = db.get_http_services(project_id)
+    for service in http_services:
+        title = discovery.get_http_title(f'{service["ip_address"]}:{service["port_number"]}')
+        if title:
+            print(f"Actualizando {title} de {service["id"]}")
+            db.update_port(service["id"], {'product_version':title})
+        
     return {"status":"OK"}
 
+@router.get('/banner/{port_id}')
+async def update_title(port_id):
+    try:
+        port = db.get_port(port_id)
+        if port:
+            banner = discovery.get_banner(port.ip_address, port.Port.port_number)
+            if banner and banner != 'timed out':
+                db.update_port(port.Port.id, {"banner": banner})
+            return {"status": banner[:150]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-
-    
     

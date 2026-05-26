@@ -8,6 +8,7 @@ class ServiceResponse(BaseModel):
     protocol: str
     port_id:int
     commands:Optional[str]
+    banner: Optional[str] = None
     discovered:bool
     product_version: Optional[str] = None
 

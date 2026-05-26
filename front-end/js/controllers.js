@@ -320,6 +320,30 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
         /* Comandos */
 
         $scope.openCommandModal = function (row) { $scope.selectedRow = row; $scope.commandInput = $scope.selectedRow.commands; $scope.showCommandModal = true; };
+        $scope.openBannerModal = function(row){
+                $scope.showBannerModal = true;
+                if (row.banner){
+                    $scope.banner = row.banner;
+                }
+                else{
+                    ApiService.get(`services/banner/${row.port_id}`).then(function(response){
+                        if (response.data.status){
+                            $scope.banner = response.data.status;
+                        }
+                        else{
+                            $scope.showBannerModal = false;
+                        }
+                        
+                    });
+                }
+                
+        }
+
+        $scope.closeBannerModal = function(){
+            $scope.showBannerModal = false;
+            $scope.banner = null;
+        }
+
         $scope.closeCommandModal = function () {
             $scope.showCommandModal = false;
             $scope.selectedRow = null; // Limpiar la fila seleccionada

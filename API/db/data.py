@@ -38,6 +38,7 @@ class Port(Base):
     discovered = Column(Boolean)
     notes = Column(String)
     commands = Column(Text)
+    banner = Column(Text)
     __table_args__ = (UniqueConstraint('host_id', 'port_number', name='_host_port_uc'),)
     host = relationship("Host", back_populates="ports")
 
@@ -161,6 +162,7 @@ class NexusMapperDB:
             "port_id":p.id,
             "discovered":p.discovered,
             "commands": p.commands,
+            "banner": p.banner[:150] if p.banner else '',
             "product_version":p.product_version} for h, p in results]
         
         session.close()
@@ -191,6 +193,17 @@ class NexusMapperDB:
         data = [{"service_name":p.service_name,"port":p.port_number, "count":p.count} for p in results]
         session.close()
         return data
+    
+    def get_port(self, port_id:int):
+        session = self.Session()
+        try:
+            results = session.query(Port, Host.ip_address.label("ip_address")). \
+                        join(Host, Host.id == Port.host_id). \
+                        filter(Port.id == port_id) .first()
+            return results
+        finally:
+            session.close()
+
     
     def get_http_services(self, project_id:int):
         session = self.Session()
@@ -236,6 +249,16 @@ class NexusMapperDB:
         
         session.commit()
         session.close()
+    
+    # def update_banner(self, port_id:int, banner:str):
+    #     session = self.Session()
+    #     port = session.query(Port).filter_by(id=port_id).first()
+    #     if banner:
+    #         port.banner = banner
+        
+    #     session.commit()
+    #     session.close()
+
 
 ###### Hosts #####
     def get_hosts(self, project_id:int):
