@@ -54,6 +54,14 @@ class Credential(Base):
     __table_args__ = (UniqueConstraint('username', 'password','port_id', name='uq_credential'),)
     #ports = relationship("Port", back_populates="credentials")
 
+class Command(Base):
+    __tablename__ = 'commands'
+    id = Column(Integer, primary_key=True)
+    command = Column(String)
+    product_version = Column(String)
+
+
+
 # --- Gestor de Base de Datos ---
 class NexusMapperDB:
     def __init__(self, db_url = None):

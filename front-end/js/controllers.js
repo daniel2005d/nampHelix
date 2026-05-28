@@ -1,3 +1,4 @@
+
 var app = angular.module('nmapHelix', ['ngRoute']);
 
 // 1. Interceptor para el loading automático
@@ -25,6 +26,10 @@ app.config(['$routeProvider', function ($routeProvider) {
         .when('/', {
             templateUrl: 'home.html',
             controller: 'HomeController'
+        })
+        .when('/commands', {
+            templateUrl: 'commands.html',
+            controller: 'CommandsController'
         })
 
         .when('/detail/:project_id', {
@@ -524,3 +529,8 @@ app.controller('MainController', ['$scope', 'ApiService', '$routeParams', 'Proje
 
         $scope.init();
     }]);
+
+
+    
+
+    
